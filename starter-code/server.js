@@ -28,7 +28,10 @@ app.get('/articles/all', function(request, response) {
   client.connect(function(err) {
     if (err) console.error(err);
     client.query(
-      ``, // TODO: Write a SQL query which inner joins the data from articles and authors for all records
+      `SELECT * FROM authors
+      INNER JOIN articles
+        ON authors.author_id=articles.author_id;
+      `, // DONE: Write a SQL query which inner joins the data from articles and authors for all records
       function(err, result) {
         if (err) console.error(err);
         response.send(result);
@@ -42,8 +45,13 @@ app.post('/articles/insert', function(request, response) {
   let client = new pg.Client(conString)
 
   client.query(
-    '', // TODO: Write a SQL query to insert a new author, ON CONFLICT DO NOTHING
-    [], // TODO: Add the author and "authorUrl" as data for the SQL query
+    `INSERT INTO authors (author, "authorUrl")
+    VALUES ($1, $2);
+    `, // DONE: Write a SQL query to insert a new author, ON CONFLICT DO NOTHING
+    [
+      request.body.author,
+      request.body.authorUrl
+    ], // DONE: Add the author and "authorUrl" as data for the SQL query
     function(err) {
       if (err) console.error(err)
       queryTwo() // This is our second query, to be executed when this first query is complete.
@@ -52,8 +60,12 @@ app.post('/articles/insert', function(request, response) {
 
   function queryTwo() {
     client.query(
-      ``, // TODO: Write a SQL query to retrieve the author_id from the authors table for the new article
-      [], // TODO: Add the author name as data for the SQL query
+      `SELECT author_id FROM authors
+      WHERE author = $1;
+      `, // DONE: Write a SQL query to retrieve the author_id from the authors table for the new article
+      [
+        request.body.author
+      ], // DONE: Add the author name as data for the SQL query
       function(err, result) {
         if (err) console.error(err)
         queryThree(result.rows[0].author_id) // This is our third query, to be executed when the second is complete. We are also passing the author_id into our third query
@@ -63,8 +75,15 @@ app.post('/articles/insert', function(request, response) {
 
   function queryThree(author_id) {
     client.query(
-      ``, // TODO: Write a SQL query to insert the new article using the author_id from our previous query
-      [] // TODO: Add the data from our new article, including the author_id, as data for the SQL query.
+      `INSERT INTO articles (author_id, title, category, "publishedOn", body)
+      VALUES (${authors.author_id}, $1, $2, $3, $4);
+      `, // DONE: Write a SQL query to insert the new article using the author_id from our previous query
+      [
+        request.body.title,
+        request.body.category,
+        request.body.publishedOn,
+        request.body.body
+      ] // DONE: Add the data from our new article, including the author_id, as data for the SQL query.
     );
   }
 
